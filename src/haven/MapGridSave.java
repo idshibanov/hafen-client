@@ -1,9 +1,10 @@
 package haven;
 
+import haven.StitcherService;
 import haven.resutil.Ridges;
 
 import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileWriter;
@@ -18,6 +19,9 @@ public class MapGridSave {
     private MCache.Grid g;
     public static Coord mgs;
     private static Coord mglp;
+    private static int savedTiles;
+    private static Coord mgMin;
+    private static Coord mgMax;
     private static String session;
 
     public MapGridSave(MCache map, MCache.Grid g) {
@@ -28,6 +32,8 @@ public class MapGridSave {
         BufferedImage img = drawmap(MCache.cmaps);
 
         if ((mgs == null || g.gc.dist(mglp) > 10) && img != null) {
+			endSession();
+			
             session = (new SimpleDateFormat("yyyy-MM-dd HH.mm.ss")).format(new Date(System.currentTimeMillis()));
             (new File("map/" + session)).mkdirs();
             try {
@@ -39,6 +45,10 @@ public class MapGridSave {
             }
             mgs = g.gc;
             mglp = g.gc;
+			
+			savedTiles = 0;
+			mgMin = new Coord();
+			mgMax = new Coord();
         } else {
             mglp  = g.gc;
         }
@@ -46,6 +56,35 @@ public class MapGridSave {
         if (!abort && img != null)
             save(img);
     }
+	
+	public void endSession() {
+		if(session != null) {
+			if (savedTiles < 25 && Utils.getprefb("c_bigmap", true)) {
+				deleteSessionFiles();
+			} else {
+				StitcherService.stitch(session, mgMin, mgMax);
+				if (Utils.getprefb("c_stitchDelete", false)) {
+					deleteSessionFiles();
+				}
+			}
+		}
+	}
+	
+	private void deleteSessionFiles() {
+		System.out.println("Deleting old session, size " + savedTiles);
+		try {
+			File sessionDir = new File("map/" + session);
+			File[] chunks = sessionDir.listFiles();
+			for(File mapChunk : chunks) {
+				mapChunk.delete();
+			}
+			if(!sessionDir.delete()) {
+				System.out.println("Could not delete a directory " + session);
+			}
+		} catch (SecurityException e) {
+			e.printStackTrace();
+		}
+	}	
 
     public void save(BufferedImage img) {
         Coord normc = g.gc.sub(mgs);
@@ -53,6 +92,20 @@ public class MapGridSave {
         try {
             File outputfile = new File(fileName);
             ImageIO.write(img, "png", outputfile);
+			
+			savedTiles++;			
+			if(normc.x < mgMin.x) {
+				mgMin.x = normc.x;
+			}
+			if(normc.y < mgMin.y) {
+				mgMin.y = normc.y;
+			}
+			if(normc.x > mgMax.x) {
+				mgMax.x = normc.x;
+			}
+			if(normc.y > mgMax.y) {
+				mgMax.y = normc.y;
+			}		
         } catch (IOException e) {
         }
     }

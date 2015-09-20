@@ -686,6 +686,31 @@ public class OptWnd extends Window {
                 a = val;
             }
         }, new Coord(0, y));
+		
+		if(Config.savemmap) {
+			y += 35;
+			map.add(new CheckBox("Save only long sessions") {
+				{
+					a = Utils.getprefb("c_bigmap", true);
+				}
+
+				public void set(boolean val) {
+					Utils.setprefb("c_bigmap", val);
+					a = val;
+				}
+			}, new Coord(0, y));
+			y += 35;
+			map.add(new CheckBox("Delete session when stitched") {
+				{
+					a = Utils.getprefb("c_stitchDelete", true);
+				}
+
+				public void set(boolean val) {
+					Utils.setprefb("c_stitchDelete", val);
+					a = val;
+				}
+			}, new Coord(0, y));
+		}
 
         map.add(new Label("Show boulders:"), new Coord(180, 0));
         CheckListbox boulderlist = new CheckListbox(130, 18) {
