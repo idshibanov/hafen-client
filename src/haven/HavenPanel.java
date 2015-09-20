@@ -36,6 +36,15 @@ import javax.media.opengl.*;
 import javax.media.opengl.awt.*;
 import javax.media.opengl.glu.GLU;
 
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.AWTException;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
+import java.text.SimpleDateFormat;
+
 public class HavenPanel extends GLCanvas implements Runnable, Console.Directory {
     UI ui;
     public static UI lui;
@@ -258,6 +267,9 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
                 }
             }
         });
+		// Screenshots init
+		(new File("screenshot")).mkdirs();
+		
         inited = true;
     }
 
@@ -449,6 +461,24 @@ public class HavenPanel extends GLCanvas implements Runnable, Console.Directory 
                     if (ke.getID() == KeyEvent.KEY_PRESSED) {
                         ui.keydown(ke);
                     } else if (ke.getID() == KeyEvent.KEY_RELEASED) {
+						if (ke.getExtendedKeyCode() == KeyEvent.VK_F12) {
+							Point scrLoc = getLocationOnScreen();
+							Rectangle appRect = new Rectangle(scrLoc.x, scrLoc.y, this.w, this.h);
+							try {
+								BufferedImage capture = new Robot().createScreenCapture(appRect);
+								
+								String sTimestamp = new SimpleDateFormat("yyyy-MM-dd HH.mm.ss").format(new Date(System.currentTimeMillis()));
+								String fileName = String.format("screenshot/%s.png", sTimestamp);
+							
+								File outputfile = new File(fileName);
+								ImageIO.write(capture, "png", outputfile);
+							} catch (AWTException awtex) {
+								System.out.println("Cannot create screen capture");
+								awtex.printStackTrace();
+							} catch (IOException ioex) {
+								ioex.printStackTrace();
+							}
+						}			
                         ui.keyup(ke);
                     } else if (ke.getID() == KeyEvent.KEY_TYPED) {
                         ui.type(ke);
